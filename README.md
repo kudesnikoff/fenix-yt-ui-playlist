@@ -4,6 +4,8 @@ A lightweight Tampermonkey userscript that improves the **YouTube Playlists** pa
 
 Небольшой userscript для Tampermonkey, который улучшает **интерфейс страницы плейлистов YouTube**, не заменяя сам YouTube и не создавая отдельный менеджер плейлистов.
 
+**Current version / Текущая версия: 1.3.0**
+
 ---
 
 ## Русский
@@ -18,7 +20,7 @@ A lightweight Tampermonkey userscript that improves the **YouTube Playlists** pa
 - очистка карточек плейлистов от лишней служебной информации:
   - удаляется `Обновлено сегодня`, `Обновлено вчера`, `Обновлено ...`;
   - удаляется подпись `· Плейлист`;
-- ссылка **«Посмотреть весь плейлист»** оформляется как компактная кнопка с одним серым бордюром;
+- ссылка **«Посмотреть весь плейлист»** оформляется как компактная кнопка с **одним серым бордюром**;
 - пункт **«Удалить»** скрывается из быстрого меню `⋮`, чтобы снизить риск случайного удаления;
 - кнопка **«Удалить плейлист»** переносится в окно **«Редактирование»**;
 - перед удалением добавляется дополнительное подтверждение, после чего используется штатное подтверждение YouTube;
@@ -36,7 +38,7 @@ A lightweight Tampermonkey userscript that improves the **YouTube Playlists** pa
 ### Установка
 
 1. Установите Tampermonkey или совместимый userscript-менеджер.
-2. Откройте файл `fenix-yt-organizer-playlist.user.js` в репозитории.
+2. Откройте файл `fenix-yt-ui-playlist.user.js` в репозитории.
 3. Скопируйте код в новый userscript Tampermonkey и сохраните его.
 4. Откройте `https://www.youtube.com/feed/playlists`.
 5. Обновите страницу.
@@ -71,7 +73,7 @@ Current features:
 - removes unnecessary playlist-card metadata:
   - hides `Updated today`, `Updated yesterday`, `Updated ...`;
   - removes the `· Playlist` label;
-- turns **“View full playlist”** into a compact button with a single gray border;
+- turns **“View full playlist”** into a compact button with a **single gray border**;
 - hides **Delete** from the quick `⋮` menu to reduce accidental deletion;
 - moves **Delete playlist** into the **Edit** dialog;
 - adds an extra confirmation step before invoking YouTube's native delete confirmation;
@@ -89,7 +91,7 @@ Playlist creation uses YouTube's internal `youtubei` page mechanism rather than 
 ### Installation
 
 1. Install Tampermonkey or another compatible userscript manager.
-2. Open `fenix-yt-organizer-playlist.user.js` from this repository.
+2. Open `fenix-yt-ui-playlist.user.js` from this repository.
 3. Copy it into a new Tampermonkey userscript and save it.
 4. Open `https://www.youtube.com/feed/playlists`.
 5. Reload the page.
