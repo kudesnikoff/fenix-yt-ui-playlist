@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fenix YT Organizer Playlist
 // @namespace    fenix.youtube
-// @version      1.2.0
+// @version      1.2.1
 // @description  Улучшенный интерфейс и безопасное управление плейлистами YouTube
 // @match        https://www.youtube.com/*
 // @grant        none
@@ -34,6 +34,7 @@
     ].join(',');
 
     const DELETE_NAMES = ['Удалить', 'Delete'];
+    const VIEW_PLAYLIST_NAMES = ['Посмотреть весь плейлист', 'View full playlist'];
 
     let lastPlaylistCard = null;
     let updateScheduled = false;
@@ -71,12 +72,7 @@
         }
 
         const headings = [...document.querySelectorAll('h1, h2, yt-formatted-string')];
-        const hasPlaylistHeading = headings.some(el => {
-            const value = txt(el);
-            return value === 'Плейлисты' || value === 'Playlists';
-        });
-
-        if (hasPlaylistHeading) return true;
+        if (headings.some(el => ['Плейлисты', 'Playlists'].includes(txt(el)))) return true;
 
         const cards = getPlaylistCards();
         if (cards.length >= 2) {
@@ -129,16 +125,21 @@
                 }
             }
 
+            /* Exactly one border belongs to the actual clickable control. */
             .fenix-view-playlist-button {
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
                 box-sizing: border-box !important;
+                width: auto !important;
+                min-width: 0 !important;
                 min-height: 36px !important;
                 margin-top: 8px !important;
                 padding: 6px 12px !important;
                 border: 1px solid rgba(255,255,255,.30) !important;
                 border-radius: 18px !important;
+                outline: none !important;
+                box-shadow: none !important;
                 background: transparent !important;
                 color: rgba(255,255,255,.88) !important;
                 font-family: Roboto, Arial, sans-serif !important;
@@ -149,6 +150,23 @@
                 text-decoration: none !important;
                 cursor: pointer !important;
                 transition: background .15s, border-color .15s !important;
+            }
+
+            /* YouTube often nests its own button-shape wrappers. Remove their rings. */
+            .fenix-view-playlist-button *,
+            .fenix-view-playlist-button *::before,
+            .fenix-view-playlist-button *::after {
+                border: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+
+            .fenix-view-playlist-button::before,
+            .fenix-view-playlist-button::after {
+                border: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
             }
 
             .fenix-view-playlist-button:hover {
@@ -221,8 +239,7 @@
     function cleanPlaylistMetadata() {
         if (!isPlaylistPage()) return;
 
-        const cards = getPlaylistCards();
-        for (const card of cards) {
+        for (const card of getPlaylistCards()) {
             const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
             const nodes = [];
             let node;
@@ -255,17 +272,27 @@
     function styleViewPlaylistLinks() {
         if (!isPlaylistPage()) return;
 
-        const cards = getPlaylistCards();
-        for (const card of cards) {
-            const elements = card.querySelectorAll('a, button, yt-formatted-string, span');
-            for (const el of elements) {
-                const value = txt(el);
-                const isViewLink = value === 'Посмотреть весь плейлист' || value === 'View full playlist';
-                if (!isViewLink) continue;
+        for (const card of getPlaylistCards()) {
+            /* Remove stale classes first so only one element can keep the border. */
+            card.querySelectorAll('.fenix-view-playlist-button').forEach(el => {
+                el.classList.remove('fenix-view-playlist-button');
+            });
 
-                const target = el.closest('a, button') || el;
-                target.classList.add('fenix-view-playlist-button');
+            /* Prefer the real native <button>; otherwise use the anchor. */
+            const nativeButtons = [...card.querySelectorAll('button')];
+            const nativeLinks = [...card.querySelectorAll('a')];
+
+            let target = nativeButtons.find(el => VIEW_PLAYLIST_NAMES.includes(txt(el)));
+            if (!target) target = nativeLinks.find(el => VIEW_PLAYLIST_NAMES.includes(txt(el)));
+
+            /* Fallback for YouTube variants where text lives in a nested custom element. */
+            if (!target) {
+                const label = [...card.querySelectorAll('yt-formatted-string, span')]
+                    .find(el => VIEW_PLAYLIST_NAMES.includes(txt(el)));
+                target = label?.closest('button, a') || null;
             }
+
+            if (target) target.classList.add('fenix-view-playlist-button');
         }
     }
 
@@ -292,7 +319,6 @@
 
     function findPlaylistMenuButton(card) {
         if (!card) return null;
-
         return (
             card.querySelector('ytd-menu-renderer yt-icon-button') ||
             card.querySelector('button[aria-label*="меню" i]') ||
@@ -331,12 +357,10 @@
             const titleElement = lastPlaylistCard.querySelector(
                 '#video-title, #title, a[href*="/playlist?list="]'
             );
-
             const name = txt(titleElement) || 'этот плейлист';
             const confirmed = confirm(
                 `Удалить "${name}"?\n\nПосле этого YouTube ещё покажет своё штатное подтверждение.`
             );
-
             if (!confirmed) return;
         }
 
@@ -366,7 +390,6 @@
     function addDeleteButton() {
         const dialog = findEditDialog();
         if (!dialog) return;
-
         if (dialog.querySelector('#fenix-delete-playlist-button')) return;
 
         const wrapper = document.createElement('div');
@@ -376,7 +399,6 @@
         button.id = 'fenix-delete-playlist-button';
         button.type = 'button';
         button.textContent = CONFIG.deleteButtonText;
-
         button.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
@@ -441,7 +463,6 @@
             const reload = confirm(
                 `Плейлист "${cleanTitle}" создан.\n\nОбновить страницу, чтобы увидеть его?`
             );
-
             if (reload) location.reload();
         } catch (error) {
             console.error('[Fenix YT Organizer Playlist]', error);
@@ -459,7 +480,6 @@
             existing?.remove();
             return;
         }
-
         if (existing) return;
 
         const button = document.createElement('button');
@@ -467,7 +487,6 @@
         button.type = 'button';
         button.textContent = CONFIG.createButtonText;
         button.title = 'Создать новый плейлист';
-
         button.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
@@ -511,7 +530,7 @@
             setTimeout(updateUI, 300);
         });
 
-        console.info('[Fenix YT Organizer Playlist 1.2.0] loaded');
+        console.info('[Fenix YT Organizer Playlist 1.2.1] loaded');
     }
 
     if (document.readyState === 'loading') {
